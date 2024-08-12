@@ -1,27 +1,25 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, after_this_request
 import os
 import psycopg2
 from psycopg2 import pool
 from dotenv import load_dotenv
 import logging
+from functools import wraps
 
 load_dotenv()
 
 app = Flask(__name__)
 
-# Setup logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-# Database connection parameters
 DB_HOST = os.getenv("DB_HOST")
 DB_NAME = os.getenv("DB_NAME")
 DB_USER = os.getenv("DB_USER")
 DB_PASS = os.getenv("DB_PASS")
 DB_PORT = os.getenv("DB_PORT")
 
-# Initialize connection pool
 try:
-    conn_pool = psycopg2.pool.SimpleConnectionPool(1, 20,  # Min and Max connections
+    conn_pool = psycopg2.pool.SimpleConnectionPool(1, 20,
                                                    host=DB_HOST,
                                                    dbname=DB_NAME,
                                                    user=DB_USER,
@@ -31,7 +29,7 @@ try:
         logging.info("Connection pool created successfully")
 except (Exception, psycopg2.DatabaseError) as error:
     logging.error("Error while connecting to PostgreSQL", error)
-    exit(1)  # Exit the app if the database connection couldn't be established
+    exit(1)
 
 def get_db_connection():
     return conn_pool.getconn()
@@ -39,11 +37,25 @@ def get_db_connection():
 def put_db_connection(conn):
     conn_pool.putconn(conn)
 
+def log_route(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        logging.info(f"Incoming request: {request.method} {request.path}")
+        response = func(*args, **kwargs)
+        @after_this_request
+        def log_response(response):
+            logging.info(f"Response status: {response.status}")
+            return response
+        return response
+    return wrapper
+
 @app.route('/')
+@log_route
 def home():
     return jsonify({"message": "Welcome to our project management system!"})
 
 @app.route('/projects', methods=['POST'])
+@log_route
 def add_project():
     data = request.json
     if not data.get('name') or not data.get('description'):
@@ -67,6 +79,7 @@ def add_project():
     return jsonify({"id": project_id, "status": "success"}), 201
 
 @app.route('/projects', methods=['GET'])
+@log_route
 def get_projects():
     conn = get_db_connection()
     projects = []
@@ -84,6 +97,7 @@ def get_projects():
     return jsonify([{"id": project[0], "name": project[1], "description": project[2]} for project in projects])
 
 @app.route('/projects/<int:project_id>', methods=['PUT', 'DELETE'])
+@log_route
 def update_or_delete_project(project_id):
     data = request.json if request.method == 'PUT' else None
     conn = get_db_connection()
