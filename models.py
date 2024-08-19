@@ -4,42 +4,45 @@ import os
 from flask import Flask
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///data.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///projectpulse_data.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
+database = SQLAlchemy(app)
 
-class Project(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120), nullable=False)
-    description = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    tasks = db.relationship('Task', backref='project', lazy=True)
+class Project(database.Model):
+    project_id = database.Column(database.Integer, primary_key=True)
+    project_name = database.Column(database.String(120), nullable=False)
+    project_description = database.Column(database.Text, nullable=True)
+    creation_date = database.Column(database.DateTime, nullable=False, default=datetime.utcnow)
+    associated_tasks = database.relationship('Task', backref='associated_project', lazy=True)
     
     def __repr__(self):
-        return f'<Project {self.name}>'
+        return f'<Project {self.project_name}>'
 
-class Task(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(120), nullable=False)
-    description = db.Column(db.Text, nullable=True)
-    status = db.Column(db.String(50), nullable=False, default="pending")
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
-    metrics = db.relationship('Metric', backref='task', lazy=True)
+class Task(database.Model):
+    task_id = database.Column(database.Integer, primary_key=True)
+    task_title = database.Column(database.String(120), nullable=False)
+    task_description = database.Column(database.Text, nullable=True)
+    task_status = database.Column(database.String(50), nullable=False, default="pending")
+    creation_date = database.Column(database.DateTime, nullable=False, default=datetime.utcnow)
+    linked_project_id = database.Column(database.Integer, database.ForeignKey('project.project_id'), nullable=False)
+    task_metrics = database.relationship('Metric', backref='linked_task', lazy=True)
     
     def __repr__(self):
-        return f'<Task {self.title}>'
+        return f'<Task {self.task_title}>'
 
-class Metric(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120), nullable=False)
-    value = db.Column(db.Float, nullable=False)
-    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=False)
+class Metric(database.Model):
+    metric_id = database.Column(database.Integer, primary_key=True)
+    metric_name = database.Column(database.String(120), nullable=False)
+    metric_value = database.Column(database.Float, nullable=False)
+    recording_time = database.Column(database.DateTime, nullable=False, default=datetime.utcnow)
+    associated_task_id = database.Column(database.Integer, database.ForeignKey('task.task_id'), nullable=False)
     
     def __repr__(self):
-        return f'<Metric {self.name}: {self.value}>'
+        return f'<Metric {self.metric_name}: {self.metric_value}>'
 
 @app.before_first_request
-def create_tables():
-    db.create_all()
+def create_database_tables():
+    database.create_all()
+
+if __name__ == '__main__':
+    app.run(debug=True)
