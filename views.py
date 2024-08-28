@@ -32,12 +32,19 @@ class Metric(db.Model):
 def create_tables():
     db.create_all()
 
+def add_and_commit(obj):
+    db.session.add(obj)
+    db.session.commit()
+
+def delete_and_commit(obj):
+    db.session.delete(obj)
+    db.session.commit()
+
 @app.route('/projects', methods=['POST'])
 def create_project():
     data = request.json
     new_project = Project(name=data['name'], description=data.get('description'))
-    db.session.add(new_project)
-    db.session.commit()
+    add_and_commit(new_project)
     return jsonify({'message': 'Project created successfully.'}), 201
 
 @app.route('/projects/<int:id>', methods=['GET'])
@@ -47,47 +54,51 @@ def get_project(id):
 
 @app.route('/projects/<int:id>', methods=['PUT'])
 def update_project(id):
-    project = Project.query.get_or_404(id)
-    data = request.json
-    project.name = data.get('name', project.name)
-    project.description = data.get('description', project.description)
+    project = get_object(Project, id)
+    update_project_attributes(project, request.json)
     db.session.commit()
     return jsonify({'message': 'Project updated successfully.'}), 200
 
+def get_object(model, id):
+    return model.query.get_or_404(id)
+
+def update_project_attributes(project, data):
+    project.name = data.get('name', project.name)
+    project.description = data.get('description', project.description)
+
 @app.route('/projects/<int:id>', methods=['DELETE'])
 def delete_project(id):
-    project = Project.query.get_or_404(id)
-    db.session.delete(project)
-    db.session.commit()
+    project = get_object(Project, id)
+    delete_and_commit(project)
     return jsonify({'message': 'Project deleted successfully.'}), 204
 
 @app.route('/tasks', methods=['POST'])
 def create_task():
     data = request.json
     new_task = Task(name=data['name'], status=data['status'], project_id=data['project_id'])
-    db.session.add(new_task)
-    db.session.commit()
+    add_and_commit(new_task)
     return jsonify({'message': 'Task created successfully.'}), 201
 
 @app.route('/tasks/<int:id>', methods=['GET'])
 def get_task(id):
-    task = Task.query.get_or_404(id)
+    task = get_object(Task, id)
     return jsonify({'id': task.id, 'name': task.name, 'status': task.status, 'project_id': task.project_id}), 200
 
 @app.route('/tasks/<int:id>', methods=['PUT'])
 def update_task(id):
-    task = Task.query.get_or_404(id)
-    data = request.json
-    task.name = data.get('name', task.name)
-    task.status = data.get('status', task.status)
+    task = get_object(Task, id)
+    update_task_attributes(task, request.json)
     db.session.commit()
     return jsonify({'message': 'Task updated successfully.'}), 200
 
+def update_task_attributes(task, data):
+    task.name = data.get('name', task.name)
+    task.status = data.get('status', task.status)
+
 @app.route('/tasks/<int:id>', methods=['DELETE'])
 def delete_task(id):
-    task = Task.query.get_or_404(id)
-    db.session.delete(task)
-    db.session.commit()
+    task = get_object(Task, id)
+    delete_and_commit(task)
     return jsonify({'message': 'Task deleted successfully.'}), 204
 
 if __name__ == '__main__':
