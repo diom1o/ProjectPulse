@@ -33,31 +33,48 @@ def create_tables():
     db.create_all()
 
 def add_and_commit(obj):
-    db.session.add(obj)
-    db.session.commit()
+    try:
+        db.session.add(obj)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        raise e
 
 def delete_and_commit(obj):
-    db.session.delete(obj)
-    db.session.commit()
+    try:
+        db.session.delete(obj)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        raise e
 
 @app.route('/projects', methods=['POST'])
 def create_project():
     data = request.json
-    new_project = Project(name=data['name'], description=data.get('description'))
-    add_and_commit(new_project)
-    return jsonify({'message': 'Project created successfully.'}), 201
+    try:
+        new_project = Project(name=data['name'], description=data.get('description'))
+        add_and_commit(new_project)
+        return jsonify({'message': 'Project created successfully.'}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/projects/<int:id>', methods=['GET'])
 def get_project(id):
-    project = Project.query.get_or_404(id)
-    return jsonify({'id': project.id, 'name': project.name, 'description': project.description}), 200
+    try:
+        project = Project.query.get_or_404(id)
+        return jsonify({'id': project.id, 'name': project.name, 'description': project.description}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 404
 
 @app.route('/projects/<int:id>', methods=['PUT'])
 def update_project(id):
-    project = get_object(Project, id)
-    update_project_attributes(project, request.json)
-    db.session.commit()
-    return jsonify({'message': 'Project updated successfully.'}), 200
+    try:
+        project = get_object(Project, id)
+        update_project_attributes(project, request.json)
+        db.session.commit()
+        return jsonify({'message': 'Project updated successfully.'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 def get_object(model, id):
     return model.query.get_or_404(id)
@@ -68,28 +85,40 @@ def update_project_attributes(project, data):
 
 @app.route('/projects/<int:id>', methods=['DELETE'])
 def delete_project(id):
-    project = get_object(Project, id)
-    delete_and_commit(project)
-    return jsonify({'message': 'Project deleted successfully.'}), 204
+    try:
+        project = get_object(Project, id)
+        delete_and_commit(project)
+        return jsonify({'message': 'Project deleted successfully.'}), 204
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/tasks', methods=['POST'])
 def create_task():
     data = request.json
-    new_task = Task(name=data['name'], status=data['status'], project_id=data['project_id'])
-    add_and_commit(new_task)
-    return jsonify({'message': 'Task created successfully.'}), 201
+    try:
+        new_task = Task(name=data['name'], status=data['status'], project_id=data['project_id'])
+        add_and_commit(new_task)
+        return jsonify({'message': 'Task created successfully.'}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/tasks/<int:id>', methods=['GET'])
 def get_task(id):
-    task = get_object(Task, id)
-    return jsonify({'id': task.id, 'name': task.name, 'status': task.status, 'project_id': task.project_id}), 200
+    try:
+        task = get_object(Task, id)
+        return jsonify({'id': task.id, 'name': task.name, 'status': task.status, 'project_id': task.project_id}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 404
 
 @app.route('/tasks/<int:id>', methods=['PUT'])
 def update_task(id):
-    task = get_object(Task, id)
-    update_task_attributes(task, request.json)
-    db.session.commit()
-    return jsonify({'message': 'Task updated successfully.'}), 200
+    try:
+        task = get_object(Task, id)
+        update_task_attributes(task, request.json)
+        db.session.commit()
+        return jsonify({'message': 'Task updated successfully.'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 def update_task_attributes(task, data):
     task.name = data.get('name', task.name)
@@ -97,9 +126,12 @@ def update_task_attributes(task, data):
 
 @app.route('/tasks/<int:id>', methods=['DELETE'])
 def delete_task(id):
-    task = get_object(Task, id)
-    delete_and_commit(task)
-    return jsonify({'message': 'Task deleted successfully.'}), 204
+    try:
+        task = get_object(Task, id)
+        delete_and_commit(task)
+        return jsonify({'message': 'Task deleted successfully.'}), 204
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
