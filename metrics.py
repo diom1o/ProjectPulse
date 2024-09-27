@@ -3,52 +3,52 @@ from dotenv import load_dotenv
 import datetime
 load_dotenv()
 
-class ProjectHealthMetrics:
-    def __init__(self, total_tasks, completed_tasks, start_date, end_date, risk_factors):
-        self.total_tasks = total_tasks
-        self.completed_tasks = completed_tasks
-        self.start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d').date()
-        self.end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d').date()
-        self.risk_factors = risk_factors
+class ProjectHealthTracker:
+    def __init__(self, total_task_count, completed_task_count, project_start_date, project_end_date, project_risk_factors):
+        self.total_task_count = total_task_count
+        self.completed_task_count = completed_task_count
+        self.project_start_date = datetime.datetime.strptime(project_start_date, '%Y-%m-%d').date()
+        self.project_end_date = datetime.datetime.strptime(project_end_date, '%Y-%m-%d').date()
+        self.project_risk_factors = project_risk_factors
 
-    def calculate_progress(self):
+    def compute_project_progress_percentage(self):
         try:
-            progress = (self.completed_tasks / self.total_tasks) * 100
-            return progress
+            progress_percentage = (self.completed_task_count / self.total_task_count) * 100
+            return progress_percentage
         except ZeroDivisionError:
             return 0
 
-    def calculate_task_completion_rate(self):
+    def compute_daily_task_completion_rate(self):
         try:
-            days_passed = (datetime.date.today() - self.start_date).days
-            rate = self.completed_tasks / days_passed
-            return rate
+            elapsed_days = (datetime.date.today() - self.project_start_date).days
+            daily_completion_rate = self.completed_task_count / elapsed_days
+            return daily_completion_rate
         except ZeroDivisionError:
             return 0
 
-    def assess_risks(self):
+    def evaluate_project_risk_level(self):
         risk_level = "Low"
-        if len(self.risk_factors) > 5:
+        if len(self.project_risk_factors) > 5:
             risk_level = "High"
-        elif 0 < len(self.risk_factors) <= 5:
+        elif 0 < len(self.project_risk_factors) <= 5:
             risk_level = "Medium"
         return risk_level
 
-    def update_metrics(self, completed_tasks=None, risk_factors=None):
-        if completed_tasks is not None:
-            self.completed_tasks = completed_tasks
-        if risk_factors is not None:
-            self.risk_factors = risk_factors
+    def refresh_project_metrics(self, updated_completed_tasks=None, updated_risk_factors=None):
+        if updated_completed_tasks is not None:
+            self.completed_task_count = updated_completed_tasks
+        if updated_risk_factors is not None:
+            self.project_risk_factors = updated_risk_factors
 
 if __name__ == "__main__":
-    total_tasks = 100
-    completed_tasks = 45
-    start_date = os.getenv('PROJECT_START_DATE', '2023-01-01')
-    end_date = os.getenv('PROJECT_END_DATE', '2023-12-31')
-    risk_factors = ['New technology', 'Tight schedule']
+    task_total_count = 100
+    task_completed_count = 45
+    project_start_date_env = os.getenv('PROJECT_START_DATE', '2023-01-01')
+    project_end_date_env = os.getenv('PROJECT_END_DATE', '2023-12-31')
+    identified_risk_factors = ['New technology', 'Tight schedule']
 
-    project = ProjectHealthMetrics(total_tasks, completed_tasks, start_date, end_date, risk_factors)
+    project_tracker = ProjectHealthTracker(task_total_count, task_completed_count, project_start_date_env, project_end_date_env, identified_risk_factors)
 
-    print(f"Project Progress: {project.calculate_progress()}%")
-    print(f"Task Completion Rate: {project.calculate_task_completion_rate()} tasks/day")
-    print(f"Potential Risk Level: {project.assess_risks()}")
+    print(f"Project Progress: {project_tracker.compute_project_progress_percentage()}%")
+    print(f"Task Completion Rate: {project_tracker.compute_daily_task_completion_rate()} tasks/day")
+    print(f"Potential Risk Level: {project_tracker.evaluate_project_risk_level()}")
