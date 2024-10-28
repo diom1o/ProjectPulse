@@ -4,75 +4,60 @@ import datetime
 load_dotenv()
 
 class ProjectHealthTracker:
-    """
-    A tracker for monitoring the health of a project through various metrics like
-    task completion rate, project progress, and risk level evaluation.
-    """
     def __init__(self, total_task_count, completed_task_count, project_start_date, project_end_date, project_risk_factors):
-        """
-        Initializes the tracker with project details.
-
-        :param total_task_count: Total number of tasks in the project.
-        :param completed_task_count: Number of tasks completed.
-        :param project_start_date: Start date of the project in 'YYYY-MM-DD' format.
-        :param project_end_date: End date of the project in 'YYYY-MM-DD' format.
-        :param project_risk_factors: A list of identified risk factors for the project.
-        """
-        self.total_task_count = total_task_count
-        self.completed_task_count = completed_task_count
-        self.project_start_date = datetime.datetime.strptime(project_start_date, '%Y-%m-%d').date()
-        self.project_end_date = datetime.datetime.strptime(project_end_date, '%Y-%m-%d').date()
-        self.project_risk_factors = project_risk_factors
+        try:
+            self.total_task_count = int(total_task_count)
+            self.completed_task_count = int(completed_task_count)
+            self.project_start_date = datetime.datetime.strptime(project_start_date, '%Y-%m-%d').date()
+            self.project_end_date = datetime.datetime.strptime(project_end_date, '%Y-%m-%d').date()
+            if not isinstance(project_risk_factors, list):
+                raise ValueError("project_risk_factors must be a list")
+            self.project_risk_factors = project_risk_factors
+        except ValueError as e:
+            print(f"Initialization error: {e}")
+        except TypeError as e:
+            print(f"Type error during initialization: {e}")
+        except Exception as e:
+            print(f"Unexpected error occurred during initialization: {e}")
 
     def compute_project_progress_percentage(self):
-        """
-        Computes the project progress as a percentage.
-
-        :return: The progress percentage of the project.
-        """
-        try:
-            progress_percentage = (self.completed_task_count / self.total_task_count) * 100
-            return progress_percentage
-        except ZeroDivisionError:
+        if self.total_task_count <= 0:
             return 0
+        progress_percentage = (self.completed_task_count / self.total_task_count) * 100
+        return progress_percentage
 
     def compute_daily_task_completion_rate(self):
-        """
-        Computes the daily task completion rate since the project started.
-
-        :return: The daily task completion rate.
-        """
-        try:
-            elapsed_days = (datetime.date.today() - self.project_start_date).days
-            daily_completion_rate = self.completed_task_count / elapsed_days
-            return daily_completion_rate
-        except ZeroDivisionError:
+        elapsed_days = (datetime.date.today() - self.project_start_date).days
+        if elapsed_days <= 0:
             return 0
+        daily_completion_rate = self.completed_task_count / elapsed_days
+        return daily_completion_rate
 
     def evaluate_project_risk_level(self):
-        """
-        Evaluates the project's risk level based on the number of identified risk factors.
-
-        :return: A string indicating the risk level of the project.
-        """
-        risk_level = "Low"
-        if len(self.project_risk_factors) > 5:
-            risk_level = "High"
-        elif 0 < len(self.project_risk_factors) <= 5:
-            risk_level = "Medium"
-        return risk_level
+        risk_factor_count = len(self.project_risk_factors)
+        if risk_factor_count > 5:
+            return "High"
+        elif 0 < risk_factor_count <= 5:
+            return "Medium"
+        else:
+            return "Low"
 
     def refresh_project_metrics(self, updated_completed_tasks=None, updated_risk_factors=None):
-        """
-        Updates the project's completed task count and/or risk factors.
-
-        :param updated_completed_tasks: Updated number of completed tasks.
-        :param updated_risk_factors: Updated list of risk factors.
-        """
-        if updated_completed_tasks is not None:
-            self.completed_task_count = updated_completed_tasks
-        if updated_risk_factors is not None:
-            self.project_risk_factors = updated_risk_factors
+        try:
+            if updated_completed_tasks is not None:
+                if isinstance(updated_completed_tasks, int) and updated_completed_tasks >= 0:
+                    self.completed_task_count = updated_completed_tasks
+                else:
+                    raise ValueError("Updated completed tasks must be a non-negative integer")
+            if updated_risk_factors is not None:
+                if isinstance(updated_risk_factors, list) and all(isinstance(item, str) for item in updated_risk_factors):
+                    self.project_risk_factors = updated_risk_factors
+                else:
+                    raise ValueError("Updated risk factors must be a list of strings")
+        except ValueError as e:
+            print(f"Value error during metrics refresh: {e}")
+        except Exception as e:
+            print(f"Unexpected error occurred while refreshing metrics: {e}")
 
 if __name__ == "__main__":
     task_total_count = 100
