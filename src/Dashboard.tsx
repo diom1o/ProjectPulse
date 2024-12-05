@@ -19,11 +19,17 @@ interface Project {
 const ProjectHealthDashboard: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
 
+  const logDataToConsole = (data: Project[]) => {
+    console.log('Fetched Project Health Data:', data);
+  };
+
   const fetchProjectsHealth = async () => {
     const { REACT_APP_API_URL } = process.env;
     try {
       const response = await axios.get(`${REACT_APP_API_URL}/project-health`);
-      setProjects(response.data);
+      const fetchedProjects = response.data;
+      setProjects(fetchedProjects);
+      logDataToConsole(fetchedProjects);
     } catch (error) {
       console.error('Error fetching project health data:', error);
     }
