@@ -18,6 +18,7 @@ interface Project {
 
 const ProjectHealthDashboard: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [error, setError] = useState<string>("");
 
   const logDataToConsole = (data: Project[]) => {
     console.log('Fetched Project Health Data:', data);
@@ -28,10 +29,19 @@ const ProjectHealthDashboard: React.FC = () => {
     try {
       const response = await axios.get(`${REACT_APP_API_URL}/project-health`);
       const fetchedProjects = response.data;
+      if(!Array.isArray(fetchedProjects)) {
+        throw new Error('Data format is incorrect, expected an array');
+      }
       setProjects(fetchedProjects);
       logDataToConsole(fetchedProjects);
     } catch (error) {
-      console.error('Error fetching project health data:', error);
+      if(axios.isAxiosError(error)) {
+        console.error('Error fetching project health data:', error.response?.data || error.message);
+        setError(error.response?.data.message || 'An error occurred while fetching project health data');
+      } else {
+        console.error('Error:', error.message);
+        setError(error.message);
+      }
     }
   };
 
@@ -69,6 +79,15 @@ const ProjectHealthDashboard: React.FC = () => {
       },
     ],
   };
+
+  if (error) {
+    return (
+      <div>
+        <h2>Error</h2>
+        <p>{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div>
